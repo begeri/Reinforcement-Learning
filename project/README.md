@@ -81,3 +81,9 @@ python testgymenv.py --timelimit 50 --instance-idx 50 --instance-name randomip_n
 We should see the printing of step information till the episode ends.
 
 If you do not provide --instance-idx, then the environment will load random instance out of the 100 instances in every episode. It is sometimes easier to train on a single instance to start with, instead of a pool of instances.
+
+
+To run model I used here: 
+``` 
+python rl_cuts.py 
+```
