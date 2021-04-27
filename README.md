@@ -9,7 +9,7 @@ TA: Yunhao Tang, Abhi Gupta.
 ## Labs
 Labs are all basic implementation of different reinforctment learning methods by using existing gym environment. 
 
-Lab1: MDP problem formulation and TD-learning method. 
+Lab1: MDP problem formulation and TD-learning method in FrozenLake-v0 environment. 
 
 Lab2: Linear regression and classification practise. 
 
