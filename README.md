@@ -13,9 +13,9 @@ Lab1: MDP problem formulation and TD-learning method.
 
 Lab2: Linear regression and classification practise. 
 
-Lab3: DQN method in
+Lab3: DQN method in CartPole-v0 environment. 
 
-Lab4: Policy gradient method in Cart-Pole-V0 environment. 
+Lab4: Policy gradient method in Cart-Pole-v0 environment. 
 
 Details are in ```./labs```
 
