@@ -27,7 +27,7 @@ Project aims to use RL to solve cutting plane problem. This specific environment
 
 ```Y. Tang, S. Agrawal, and Y. Faenza, “Reinforcement learning for integer programming: Learningto  cut,”CoRR,  vol.  abs/1906.04859,  2019. arXiv:1906.04859.  [Online].  Available: http://arxiv.org/abs/1906.04859 ```
 
-## Disclaim
+## Disclaimer
 
 It could be the problem when directly using the code I upload here because of the environment issue or wandb license issue. The main goal for this repo is to show my work and accomplishment in this course. I'm happy to discuss with any issue and problem for any reason. 
 
