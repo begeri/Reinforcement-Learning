@@ -6,11 +6,25 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.autograd import Variable
 
+
 import wandb
+#disable wandb for debugging
+
 wandb.login()
-run=wandb.init(project="finalproject", entity="ieor-4575", tags=["test"])
+run=wandb.init(project="Learn-to-Cut", entity="becsogergely", tags=["test"])
 #run=wandb.init(project="finalproject", entity="ieor-4575", tags=["training-hard"])
 #run=wandb.init(project="finalproject", entity="ieor-4575", tags=["test"])
+
+
+#GPU usage:
+gpu=1
+
+if gpu == -1:
+    device = torch.device("cpu")
+else:
+    cuda = "cuda:"+str(gpu)
+    device = torch.device(cuda if torch.cuda.is_available() else "cpu")
+
 
 ### TRAINING
 
@@ -47,6 +61,7 @@ test_config = {
 }
 
 
+
 class LSTM_net(nn.Module):
     def __init__(self, input_size, hidden_size, bidirectional=False):
         super(LSTM_net, self).__init__()
@@ -59,7 +74,9 @@ class LSTM_net(nn.Module):
 
     def forward(self, input):
         hidden = self.init_hidden()
-        inputs = torch.FloatTensor(input).view(1, -1, self.input_size)
+        inputs = torch.cuda.FloatTensor(input).view(1, -1, self.input_size).to(device)
+        #debugging
+        print(str(inputs.get_device())+"LSTM forward")
         output, _ = self.lstm(inputs)
         # output[-1] is same as last hidden state
         output = output[-1].reshape(-1, self.hidden_size)
@@ -84,8 +101,11 @@ class Attention_Net(nn.Module):
         self.tanh = nn.Tanh()
 
     def forward(self, constraints, cuts):
-        constraints = torch.FloatTensor(constraints)
-        cuts = torch.FloatTensor(cuts)
+        constraints = torch.cuda.FloatTensor(constraints)
+        cuts = torch.cuda.FloatTensor(cuts)
+        #debugging
+        print(str(constraints.get_device())+ "Attention_Net constraints")
+        print(str(cuts.get_device())+ "Attention_Net cuts")
 
         # lstm
         A_embed = self.lstm1.forward(constraints)
@@ -110,8 +130,11 @@ class Policy(object):
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
 
     def compute_prob(self, constraints, cuts):
-        constraints = torch.FloatTensor(constraints)
-        cuts = torch.FloatTensor(cuts)
+        constraints = torch.cuda.FloatTensor(constraints)
+        cuts = torch.cuda.FloatTensor(cuts)
+        #debugging
+        print(str(constraints.get_device())+"Policy constraints")
+        print(str(cuts.get_device())+"Policy cuts")
         prob = torch.nn.functional.softmax(self.model(constraints, cuts), dim=-1)
         return prob.cpu().data.numpy()
 
@@ -130,8 +153,11 @@ class Policy(object):
         actions: numpy array (actions)
         Qs: numpy array (Q values)
         """
-        actions = torch.LongTensor(actions)
-        Qs = torch.FloatTensor(Qs)
+        actions = torch.cuda.LongTensor(actions)
+        Qs = torch.cuda.FloatTensor(Qs)
+        #debugging
+        print(str(actions.get_device())+"train actions")
+        print(str((Qs).get_device())+ "train Qs")
 
         total_loss = 0
         # for a bunch of constraints and cuts, need to go one by one
@@ -189,7 +215,7 @@ if __name__ == "__main__":
     explore = True
     PATH = "models/easy_config_best_model_2.pt"
     # PATH = "models/hard_config_best_model3.pt"
-
+   
     # create env
     env = make_multiple_env(**test_config)
     lr = 1e-2
@@ -208,6 +234,9 @@ if __name__ == "__main__":
         actor = Policy(input_size=input_dim, hidden_size=lstm_hidden, hidden_size2=dense_hidden, lr=lr)
     else:
         actor = torch.load(PATH)
+
+    #Taking the actor to the gpu
+    actor.model.to(device)
 
     sigma = 0.2
     gamma = 0.99 # discount
@@ -285,12 +314,13 @@ if __name__ == "__main__":
 
 
         #wandb logging
+        
         wandb.log({"Discounted Reward": np.sum(returns)})
         fixedWindow = 10
         movingAverage = 0
         if len(rrecord) >= fixedWindow:
             movingAverage = np.mean(rrecord[len(rrecord) - fixedWindow:len(rrecord) - 1])
         wandb.log({"Training reward": repisode, "training reward moving average": movingAverage})
-
+        
 
 	#if using hard-config make sure to use "training-hard" tag in wandb.init in the initialization on top
