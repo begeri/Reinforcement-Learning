@@ -17,7 +17,7 @@ run=wandb.init(project="Learn-to-Cut", entity="becsogergely", tags=["test"])
 
 
 #GPU usage:
-gpu=1
+gpu=4
 
 if gpu == -1:
     device = torch.device("cpu")
@@ -76,7 +76,7 @@ class LSTM_net(nn.Module):
         hidden = self.init_hidden()
         inputs = torch.cuda.FloatTensor(input).view(1, -1, self.input_size).to(device)
         #debugging
-        print(str(inputs.get_device())+"LSTM forward")
+        #print(str(inputs.get_device())+"LSTM forward")
         output, _ = self.lstm(inputs)
         # output[-1] is same as last hidden state
         output = output[-1].reshape(-1, self.hidden_size)
@@ -101,11 +101,11 @@ class Attention_Net(nn.Module):
         self.tanh = nn.Tanh()
 
     def forward(self, constraints, cuts):
-        constraints = torch.cuda.FloatTensor(constraints)
-        cuts = torch.cuda.FloatTensor(cuts)
+        constraints = torch.cuda.FloatTensor(constraints).to(device)
+        cuts = torch.cuda.FloatTensor(cuts).to(device)
         #debugging
-        print(str(constraints.get_device())+ "Attention_Net constraints")
-        print(str(cuts.get_device())+ "Attention_Net cuts")
+        #print(str(constraints.get_device())+ "Attention_Net constraints")
+        #print(str(cuts.get_device())+ "Attention_Net cuts")
 
         # lstm
         A_embed = self.lstm1.forward(constraints)
@@ -130,11 +130,11 @@ class Policy(object):
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=lr)
 
     def compute_prob(self, constraints, cuts):
-        constraints = torch.cuda.FloatTensor(constraints)
-        cuts = torch.cuda.FloatTensor(cuts)
+        constraints = torch.FloatTensor(constraints).to(device)
+        cuts = torch.FloatTensor(cuts).to(device)
         #debugging
-        print(str(constraints.get_device())+"Policy constraints")
-        print(str(cuts.get_device())+"Policy cuts")
+        #print(str(constraints.get_device())+"Policy constraints")
+        #print(str(cuts.get_device())+"Policy cuts")
         prob = torch.nn.functional.softmax(self.model(constraints, cuts), dim=-1)
         return prob.cpu().data.numpy()
 
@@ -153,11 +153,11 @@ class Policy(object):
         actions: numpy array (actions)
         Qs: numpy array (Q values)
         """
-        actions = torch.cuda.LongTensor(actions)
-        Qs = torch.cuda.FloatTensor(Qs)
+        actions = torch.LongTensor(actions).to(device)
+        Qs = torch.FloatTensor(Qs).to(device)
         #debugging
-        print(str(actions.get_device())+"train actions")
-        print(str((Qs).get_device())+ "train Qs")
+        #print(str(actions.get_device())+"train actions")
+        #print(str((Qs).get_device())+ "train Qs")
 
         total_loss = 0
         # for a bunch of constraints and cuts, need to go one by one
@@ -294,6 +294,9 @@ if __name__ == "__main__":
             rews.append(r)
             s = new_state
             repisode += r
+            #wandb logging for one Horizon
+            wandb.log({"Step reward": rews})
+            
 
         # record rewards and print out to track performance
         rrecord.append(np.sum(rews))
